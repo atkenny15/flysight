@@ -160,6 +160,12 @@ Init_Mode: 0     ; When the FlySight is powered on\r\n\
                  ;   2 = Play file\r\n\
 Init_File: 0     ; File to be played\r\n\
 \r\n\
+Acro_Win:           -1   ; Acro window, meters below exit (negative to disable exit detection)\
+Exit_Num_Down:      5    ; Consecutive points down to indicate an exit\
+Exit_Num_Up:        50   ; Consecutive points up reset the exit altitude\
+Exit_Down_Thresh:   800  ; Speed to indicate travelling downwards (initialize exit altitude)\
+Exit_Up_Thresh:     -800 ; Speed to indicate travelling upwards (reset exit altitude)\
+\r\n\
 ; Alarm settings\r\n\
 \r\n\
 ; WARNING: GPS measurements depend on very weak signals\r\n\
@@ -185,6 +191,7 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   3 = Chirp down\r\n\
                  ;   4 = Play file\r\n\
 Alarm_File:    0 ; File to be played\r\n\
+Alarm_Acro:    0 ; Alarm is height above bottom of acro window\r\n\
 \r\n\
 ; Altitude mode settings\r\n\
 \r\n\
@@ -244,6 +251,7 @@ static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
+static const char Config_Alarm_Acro[] PROGMEM = "Alarm_Acro";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
@@ -251,6 +259,11 @@ static const char Config_Win_Top[] PROGMEM    = "Win_Top";
 static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
 static const char Config_Alt_Units[] PROGMEM  = "Alt_Units";
 static const char Config_Alt_Step[] PROGMEM   = "Alt_Step";
+static const char Config_Acro_Win[] PROGMEM   = "Acro_Win";
+static const char Config_Num_Down[] PROGMEM   = "Exit_Num_Down";
+static const char Config_Num_Up[] PROGMEM     = "Exit_Num_Up";
+static const char Config_Down_Thresh[] PROGMEM = "Exit_Down_Thresh";
+static const char Config_Up_Thresh[] PROGMEM   = "Exit_Up_Thresh";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -328,6 +341,11 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Alt_Units, UBX_alt_units,    val, val >= 0 && val <= 1);
 		HANDLE_VALUE(Config_Alt_Step,  UBX_alt_step,     val, val >= 0);
+		HANDLE_VALUE(Config_Acro_Win,  UBX_exit_info.acro_win, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Num_Down,  UBX_exit_info.num_down, val,        val >= 0 && val <= 255);
+		HANDLE_VALUE(Config_Num_Up,    UBX_exit_info.num_up,   val,        val >= 0 && val <= 255);
+		HANDLE_VALUE(Config_Down_Thresh, UBX_exit_info.down_thresh, val, TRUE);
+		HANDLE_VALUE(Config_Up_Thresh,   UBX_exit_info.up_thresh,   val, TRUE);
 		
 		#undef HANDLE_VALUE
 		
@@ -358,6 +376,10 @@ static FRESULT Config_ReadSingle(
 		{
 			result[8] = '\0';
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
+		}
+		if (!strcmp_P(name, Config_Alarm_Acro) && UBX_num_alarms <= UBX_MAX_ALARMS)
+		{
+			UBX_alarms[UBX_num_alarms - 1].acro_alarm = val;
 		}
 		
 		if (!strcmp_P(name, Config_Win_Top) && UBX_num_windows < UBX_MAX_WINDOWS)

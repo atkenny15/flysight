@@ -44,6 +44,7 @@ typedef struct
 	int32_t elev;
 	uint8_t type;
 	char    filename[9];
+	uint8_t acro_alarm;
 }
 UBX_alarm_t;
 
@@ -68,6 +69,45 @@ typedef struct
 	char filename[UBX_FILENAME_LEN];
 }
 UBX_buffer_t;
+
+typedef struct
+{
+	// ** config values **
+
+	// The size of the acrobatic window
+	int32_t acro_win;
+
+	// velD to determine if going up
+	int32_t up_thresh;
+
+	// velD to determine if going down
+	int32_t down_thresh;
+
+	// Number of consecutive down measurements needed to set alt_valid
+	uint8_t num_down;
+
+	// Number of consecutive up measurements needed to reset alt_valid
+	uint8_t num_up;
+
+	// ** other values **
+
+	// Is the exit altitude valid?
+	uint8_t alt_valid;
+
+	// The exit altitude (MSL)
+	int32_t alt;
+
+	// If altitude is below this, do not attempt to determine exit
+	int32_t min_alt;
+
+	// Direction of previous `count` velocity measurements
+	// 0: up
+	// 1: down
+	uint8_t direction;
+
+	// Number of velocity measurements
+	uint8_t count;
+} UBX_exit_t;
 
 extern uint8_t   UBX_model;
 extern uint16_t  UBX_rate;
@@ -99,6 +139,8 @@ extern uint16_t     UBX_sp_rate;
 extern uint8_t   UBX_alt_units;
 extern int32_t   UBX_alt_step;
 
+extern int32_t   UBX_acro_win;
+
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
@@ -108,6 +150,8 @@ extern UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 extern uint8_t    UBX_num_windows;
 
 extern int32_t    UBX_dz_elev;
+
+extern UBX_exit_t UBX_exit_info;
 
 void UBX_Init(void);
 void UBX_Task(void);

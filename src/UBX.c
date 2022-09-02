@@ -343,6 +343,8 @@ UBX_buffer_t UBX_buffer;
 UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 uint8_t      UBX_num_windows = 0;
 
+UBX_exit_t UBX_exit_info = {};
+
 int32_t UBX_dz_elev = 0;
 
 typedef struct
@@ -979,6 +981,19 @@ static void UBX_SpeakValue(
 	*(end_ptr++) = 0;
 }
 
+static int32_t get_alarm_elev(const UBX_alarm_t *const alarm) {
+	if (alarm->acro_alarm) {
+		const UBX_exit_t *const exit = &UBX_exit_info;
+		if (!exit->alt_valid) {
+			// Alarm is disabled
+			return 0;
+		}
+		return alarm->elev + (exit->alt - exit->acro_win);
+	} else {
+		return alarm->elev + UBX_dz_elev;
+	}
+}
+
 static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
@@ -990,7 +1005,7 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
+		const int32_t alarm_elev = get_alarm_elev(&UBX_alarms[i]);
 
 		if ((current->hMSL <= alarm_elev + UBX_alarm_window_above) &&
 		    (current->hMSL >= alarm_elev - UBX_alarm_window_below))
@@ -1049,7 +1064,7 @@ static void UBX_UpdateAlarms(
 		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
+			const int32_t alarm_elev = get_alarm_elev(&UBX_alarms[i]);
 
 			if (alarm_elev >= min && alarm_elev < max)
 			{
@@ -1180,6 +1195,68 @@ static void UBX_UpdateTones(
 	}
 }
 
+static void UBX_Exit_Init() {
+	UBX_exit_t *const exit = &UBX_exit_info;
+	exit->alt_valid = 0;
+	exit->alt = 0;
+	exit->min_alt = UBX_ALT_MIN + exit->acro_win + UBX_dz_elev;
+	exit->direction = 0;
+	exit->count = 0;
+}
+
+static void UBX_UpdateExit(
+	UBX_saved_t *current)
+{
+	UBX_exit_t *const exit = &UBX_exit_info;
+	if (exit->acro_win < 0) {
+		return;
+	}
+
+	if (current->hMSL < exit->min_alt) {
+		return;
+	}
+
+	if (exit->direction) {
+		// Currently going down
+		if (current->velD > exit->down_thresh) {
+			if (exit->count == 0) {
+				exit->alt = current->hMSL;
+			}
+			if (exit->count < 255) {
+				++exit->count;
+			}
+		} else if (current->velD < exit->up_thresh) {
+			exit->count = 1;
+			exit->direction = 0;
+		} else {
+			exit->count = 0;
+		}
+
+		if (exit->count > exit->num_down) {
+			exit->alt_valid = 1;
+			Tone_Play("exit.wav");
+		}
+	} else {
+		// Currently going up
+		if (current->velD > exit->down_thresh) {
+			exit->count = 1;
+			exit->alt = current->hMSL;
+			exit->direction = 1;
+		} else if (current->velD < exit->up_thresh) {
+			if (exit->count < 255) {
+				++exit->count;
+			}
+		} else {
+			exit->count = 0;
+		}
+
+		if (exit->count > exit->num_up) {
+			exit->alt_valid = 0;
+			Tone_Play("reset.wav");
+		}
+	}
+}
+
 static void UBX_ReceiveMessage(
 	uint8_t msg_received, 
 	uint32_t time_of_week)
@@ -1202,6 +1279,7 @@ static void UBX_ReceiveMessage(
 
 			UBX_UpdateAlarms(current);
 			UBX_UpdateTones(current);
+			UBX_UpdateExit(current);
 
 			if (!Log_IsInitialized())
 			{
@@ -1409,6 +1487,8 @@ void UBX_Init(void)
 		.flags        = 0,      // Flags bit mask
 		.reserved5    = 0       // Reserved, set to 0
 	};
+
+	UBX_Exit_Init();
 
 	do
 	{
