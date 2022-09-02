@@ -1199,7 +1199,7 @@ static void UBX_Exit_Init() {
 	UBX_exit_t *const exit = &UBX_exit_info;
 	exit->alt_valid = 0;
 	exit->alt = 0;
-	exit->min_alt = UBX_ALT_MIN + exit->acro_win + UBX_dz_elev;
+	exit->min_alt = (UBX_ALT_MIN * 1000) + exit->acro_win + UBX_dz_elev;
 	exit->direction = 0;
 	exit->count = 0;
 }
@@ -1232,7 +1232,7 @@ static void UBX_UpdateExit(
 			exit->count = 0;
 		}
 
-		if (exit->count > exit->num_down) {
+		if (!exit->alt_valid && exit->count > exit->num_down) {
 			exit->alt_valid = 1;
 			Tone_Play("exit.wav");
 		}
@@ -1250,7 +1250,7 @@ static void UBX_UpdateExit(
 			exit->count = 0;
 		}
 
-		if (exit->count > exit->num_up) {
+		if (exit->alt_valid && exit->count > exit->num_up) {
 			exit->alt_valid = 0;
 			Tone_Play("reset.wav");
 		}
