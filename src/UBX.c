@@ -343,7 +343,7 @@ UBX_buffer_t UBX_buffer;
 UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 uint8_t      UBX_num_windows = 0;
 
-UBX_exit_t UBX_exit_info = {};
+UBX_exit_t UBX_exit_info = {0};
 
 int32_t UBX_dz_elev = 0;
 
@@ -1195,15 +1195,6 @@ static void UBX_UpdateTones(
 	}
 }
 
-static void UBX_Exit_Init() {
-	UBX_exit_t *const exit = &UBX_exit_info;
-	exit->alt_valid = 0;
-	exit->alt = 0;
-	exit->min_alt = (UBX_ALT_MIN * 1000) + exit->acro_win + UBX_dz_elev;
-	exit->direction = 0;
-	exit->count = 0;
-}
-
 static void UBX_UpdateExit(
 	UBX_saved_t *current)
 {
@@ -1212,7 +1203,8 @@ static void UBX_UpdateExit(
 		return;
 	}
 
-	if (current->hMSL < exit->min_alt) {
+	const int32_t min_alt = exit->acro_win + UBX_dz_elev;
+	if (current->hMSL < min_alt) {
 		return;
 	}
 
@@ -1487,8 +1479,6 @@ void UBX_Init(void)
 		.flags        = 0,      // Flags bit mask
 		.reserved5    = 0       // Reserved, set to 0
 	};
-
-	UBX_Exit_Init();
 
 	do
 	{

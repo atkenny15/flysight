@@ -97,9 +97,6 @@ typedef struct
 	// The exit altitude (MSL)
 	int32_t alt;
 
-	// If altitude is below this, do not attempt to determine exit
-	int32_t min_alt;
-
 	// Direction of previous `count` velocity measurements
 	// 0: up
 	// 1: down
