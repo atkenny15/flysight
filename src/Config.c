@@ -160,6 +160,8 @@ Init_Mode: 0     ; When the FlySight is powered on\r\n\
                  ;   2 = Play file\r\n\
 Init_File: 0     ; File to be played\r\n\
 \r\n\
+; Acro settings\r\n\
+\r\n\
 Acro_Win:           -1   ; Acro window, meters below exit (negative to disable exit detection)\
 Exit_Num_Down:      5    ; Consecutive points down to indicate an exit\
 Exit_Num_Up:        50   ; Consecutive points up reset the exit altitude\
