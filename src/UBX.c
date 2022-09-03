@@ -343,7 +343,20 @@ UBX_buffer_t UBX_buffer;
 UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 uint8_t      UBX_num_windows = 0;
 
-UBX_exit_t UBX_exit_info = {0};
+UBX_exit_t UBX_exit_info = {
+	// ** config values **
+	.acro_win = -1,
+	.num_down = 5,
+	.num_up = 50,
+	.down_thresh = 800,
+	.up_thresh = -800,
+
+	// ** other values **
+	.alt_valid = 0,
+	.alt = 0,
+	.direction = 0,
+	.count = 0,
+};
 
 int32_t UBX_dz_elev = 0;
 
