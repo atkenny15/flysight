@@ -24,7 +24,15 @@
 #ifndef FLYSIGHT_POWER
 #define FLYSIGHT_POWER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void Power_Hold(void);
 void Power_Release(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

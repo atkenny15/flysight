@@ -45,42 +45,17 @@ static inline void LEDs_Init(void)
 	PORTC &= ~LEDS_ALL_LEDS;
 }
 
-static inline void LEDs_TurnOnLEDs(
-	const uint8_t LEDMask)
-{
-	PORTC |= LEDMask;
-}
-
-static inline void LEDs_TurnOffLEDs(
-	const uint8_t LEDMask)
-{
-	PORTC &= ~LEDMask;
-}
-
-static inline void LEDs_SetAllLEDs(
-	const uint8_t LEDMask)
-{
-	PORTC &= ~LEDS_ALL_LEDS;
-	PORTC |= LEDMask;
-}
-
 static inline void LEDs_ChangeLEDs(
 	const uint8_t LEDMask, 
 	const uint8_t ActiveMask)
 {
+#ifdef POSITION_LEDS
+	PORTC &= ~(LEDMask & LEDS_RED);
+	PORTC |= (ActiveMask & LEDS_RED);
+#else
 	PORTC &= ~LEDMask;
 	PORTC |= ActiveMask;
-}
-
-static inline void LEDs_ToggleLEDs(
-	const uint8_t LEDMask)
-{
-	PORTC ^= LEDMask;
-}
-
-static inline uint8_t LEDs_GetLEDs(void)
-{
-	return PORTC & LEDS_ALL_LEDS;
+#endif
 }
 
 #endif

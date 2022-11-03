@@ -35,6 +35,7 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "PosLeds.h"
 #include "Stack.h"
 #include "Timer.h"
 #include "Tone.h"
@@ -343,6 +344,13 @@ UBX_buffer_t UBX_buffer;
 UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 uint8_t      UBX_num_windows = 0;
 
+int32_t UBX_acro_win = -1;
+flysight::fw::ExitFinder UBX_exit_finder;
+flysight::fw::Navigation<float> UBX_nav;
+flysight::fw::PositionLeds<> UBX_pos_leds(&PORTC, 5);
+
+using flysight::fw::color_rgb;
+
 int32_t UBX_dz_elev = 0;
 
 typedef struct
@@ -408,7 +416,50 @@ static enum
 }
 UBX_state = st_idle;
 
-extern int disk_is_ready(void);
+extern "C" { extern int disk_is_ready(void); }
+
+static uint32_t get_main_led_color() {
+	if (Main_activeLED & LEDS_RED) {
+		return color_rgb(0x10, 0x0, 0x0); // red
+	} else if (Main_activeLED & LEDS_GREEN) {
+		// BBRRGG
+		return color_rgb(0x0, 0x10, 0x0); // green
+	}
+	return color_rgb(0x10, 0x10, 0x10); // white
+}
+
+static void led_strip_on(const int32_t color = -1) {
+	if (color < 0) {
+		UBX_pos_leds.set_value(get_main_led_color(), 4);
+	} else {
+		UBX_pos_leds.set_value(color, 4);
+	}
+}
+
+void UBX_ChangeLEDs(const uint8_t led_mask, const uint8_t active_mask, const bool display) {
+#ifdef POSITION_LEDS
+	PORTC &= ~led_mask;
+	PORTC |= (active_mask & LEDS_RED);
+
+	for (size_t i = 0; i < UBX_pos_leds.size(); ++i) {
+		const bool even = (i & 0x1) == 0;
+		if (even && (active_mask & LEDS_GREEN)) {
+			UBX_pos_leds.set_led(i, color_rgb(0x0, 0x10, 0x0));
+		} else if (!even && (active_mask & LEDS_RED)) {
+			UBX_pos_leds.set_led(i, color_rgb(0x10, 0x0, 0x0));
+		} else {
+			UBX_pos_leds.set_led(i, 0);
+		}
+	}
+
+	if (display) {
+		UBX_pos_leds.display();
+	}
+#else
+	PORTC &= ~led_mask;
+	PORTC |= active_mask;
+#endif
+}
 
 void UBX_Update(void)
 {
@@ -433,7 +484,11 @@ void UBX_Update(void)
 	case st_blinking:
 		if (!(UBX_flags & UBX_HAS_FIX))
 		{
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			if (UBX_nav.is_enabled()) {
+				led_strip_on(UBX_pos_leds.LED_ERROR);
+			} else {
+				UBX_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			}
 			state = st_solid;
 		}
 		break;
@@ -441,13 +496,26 @@ void UBX_Update(void)
 	
 	if (state == st_blinking)
 	{
-		if (counter == 0)
-		{
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, 0);
-		}
-		else if (counter == 900)
-		{
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+		if (UBX_nav.is_enabled()) {
+			if (!UBX_exit_finder.exit_alt_valid()) {
+				if (counter == 0)
+				{
+					UBX_pos_leds.set_value(0);
+				}
+				else if (counter == 900)
+				{
+					led_strip_on();
+				}
+			}
+		} else {
+			if (counter == 0)
+			{
+				UBX_ChangeLEDs(LEDS_ALL_LEDS, 0);
+			}
+			else if (counter == 900)
+			{
+				UBX_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			}
 		}
 
 		counter = (counter + 1) % 1000;
@@ -979,18 +1047,30 @@ static void UBX_SpeakValue(
 	*(end_ptr++) = 0;
 }
 
+static int32_t get_alarm_elev(const UBX_alarm_t *const alarm) {
+	if (alarm->acro_alarm) {
+          if (!UBX_exit_finder.exit_alt_valid()) {
+            // Alarm is disabled
+            return 0;
+          }
+                return alarm->elev + (UBX_exit_finder.exit_alt_mm() - UBX_acro_win);
+	} else {
+		return alarm->elev + UBX_dz_elev;
+	}
+}
+
 static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
 	uint8_t i, suppress_tone, suppress_alt;
-	int32_t step_size, step, step_elev;
+	int32_t step_size, step = 0, step_elev = 0;
 
 	suppress_tone = 0;
 	suppress_alt = 0;
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
+		const int32_t alarm_elev = get_alarm_elev(&UBX_alarms[i]);
 
 		if ((current->hMSL <= alarm_elev + UBX_alarm_window_above) &&
 		    (current->hMSL >= alarm_elev - UBX_alarm_window_below))
@@ -1049,7 +1129,7 @@ static void UBX_UpdateAlarms(
 		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
+			const int32_t alarm_elev = get_alarm_elev(&UBX_alarms[i]);
 
 			if (alarm_elev >= min && alarm_elev < max)
 			{
@@ -1180,6 +1260,60 @@ static void UBX_UpdateTones(
 	}
 }
 
+static int32_t get_time_ms(UBX_saved_t *current)
+{
+	static uint8_t day = 0;
+	if (day == 0) {
+		day = current->day;
+	}
+
+	int32_t time_ms = 0;
+	if (current->day != day) {
+		time_ms += 24;
+	}
+	time_ms += current->hour;
+	time_ms *= 60;
+	time_ms += current->min;
+	time_ms *= 60;
+	time_ms += current->sec;
+	time_ms *= 1000;
+	time_ms += current->nano / 1000000;
+	return time_ms;
+}
+
+static void UBX_UpdateExit(UBX_saved_t *current)
+{
+	if (!UBX_exit_finder.is_enabled()) {
+		return;
+	}
+
+	const int32_t time_ms = get_time_ms(current);
+
+	switch (UBX_exit_finder.detect(current->hMSL, current->velD, UBX_dz_elev, time_ms)) {
+		case flysight::fw::FOUND:
+			Tone_Play("exit.wav");
+			UBX_pos_leds.set_value(UBX_pos_leds.LED_EXIT, 0x4);
+			break;
+		case flysight::fw::RESET:
+			Tone_Play("reset.wav");
+			led_strip_on(UBX_pos_leds.LED_ERROR);
+			break;
+		case flysight::fw::NO_CHANGE:
+			break;
+	}
+
+	if (UBX_exit_finder.exit_alt_valid() && UBX_nav.is_enabled()) {
+		flysight::fw::LLA<float> pos_lla;
+		pos_lla.latitude_deg = current->lat / LAT_LON_SCALE;
+		pos_lla.longitude_deg = current->lon / LAT_LON_SCALE;
+		pos_lla.height_msl_m = current->hMSL / 1e3;
+		int16_t lane_pos_m;
+		if (UBX_nav.get_position(UBX_exit_finder.exit_time_ms(), time_ms, pos_lla, lane_pos_m)) {
+			UBX_pos_leds.set_position(lane_pos_m);
+		}
+	}
+}
+
 static void UBX_ReceiveMessage(
 	uint8_t msg_received, 
 	uint32_t time_of_week)
@@ -1202,6 +1336,7 @@ static void UBX_ReceiveMessage(
 
 			UBX_UpdateAlarms(current);
 			UBX_UpdateTones(current);
+			UBX_UpdateExit(current);
 
 			if (!Log_IsInitialized())
 			{
@@ -1467,6 +1602,10 @@ void UBX_Init(void)
 			UBX_flags |= UBX_SAY_ALTITUDE;
 		}
 	}
+
+	if (UBX_nav.is_enabled()) {
+		led_strip_on();
+	}
 }
 
 void UBX_Task(void)
@@ -1562,6 +1701,10 @@ void UBX_Task(void)
 			UBX_state = st_idle;
 		}
 		break;
+	}
+
+	if (Tone_IsIdle()) {
+		PosLeds_display();
 	}
 
 	if (*UBX_speech_ptr)

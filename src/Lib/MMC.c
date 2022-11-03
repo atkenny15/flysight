@@ -31,14 +31,6 @@
 #include "Main.h"
 #include "MMC.h"
 
-#define GREEN_LED_DDR  DDRC
-#define GREEN_LED_PORT PORTC
-#define GREEN_LED_MASK (1 << 5)
-
-#define RED_LED_DDR    DDRC
-#define RED_LED_PORT   PORTC
-#define RED_LED_MASK   (1 << 6)
-
 static uint32_t MMC_mediaBlocks;
 
 ISR(TIMER0_COMPA_vect)

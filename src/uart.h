@@ -47,6 +47,9 @@ LICENSE:
  
 /**@{*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if (__GNUC__ * 100 + __GNUC_MINOR__) < 304
 #error "This library requires AVR-GCC 3.4 or later, update to newer AVR-GCC compiler !"
@@ -203,6 +206,9 @@ extern void uart1_puts_p(const char *s );
 
 /**@}*/
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // UART_H 
 

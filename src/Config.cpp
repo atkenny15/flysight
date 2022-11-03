@@ -160,6 +160,30 @@ Init_Mode: 0     ; When the FlySight is powered on\r\n\
                  ;   2 = Play file\r\n\
 Init_File: 0     ; File to be played\r\n\
 \r\n\
+; Acro settings\r\n\
+\r\n\
+Acro_Win:           -1   ; Acro window, meters below exit\r\n\
+\r\n\
+; Exit detection\r\n\
+\r\n\
+Exit_Min_Alt:       -1   ; Do not detect an exit if below this altitude\r\n\
+                         ; (negative to disable exit detection)\r\n\
+Exit_Exit_Alt:      -1   ; Do not detect an exit if above this altitude\r\n\
+                         ; (negative to disable this check)\r\n\
+Exit_Num_Down:      5    ; Consecutive points down to indicate an exit\r\n\
+Exit_Num_Up:        50   ; Consecutive points up reset the exit altitude\r\n\
+Exit_Down_Thresh:   800  ; Speed (cm/s) to indicate down (positive) (initialize exit altitude)\r\n\
+Exit_Up_Thresh:     -800 ; Speed (cm/s) to indicate up (negative) (reset exit altitude)\r\n\
+\r\n\
+; Performance lane\r\n\
+\r\n\
+Lane_Width:          600 ; Width of lane in meters\r\n\
+Lane_Num_LEDs:        15 ; Number of leds for lane indicator\r\n\
+Lane_LED_Offset:       0 ; First LED in display\r\n\
+Time_After_Exit:      -1 ; Lane start time after ext (ms) (negative to disable)\r\n\
+Reference_Lat:         0 ; Reference latitude (deg * 1e7)\r\n\
+Reference_Lon:         0 ; Reference longitude (deg * 1e7)\r\n\
+\r\n\
 ; Alarm settings\r\n\
 \r\n\
 ; WARNING: GPS measurements depend on very weak signals\r\n\
@@ -185,6 +209,7 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   3 = Chirp down\r\n\
                  ;   4 = Play file\r\n\
 Alarm_File:    0 ; File to be played\r\n\
+Alarm_Acro:    0 ; Alarm is height above bottom of acro window\r\n\
 \r\n\
 ; Altitude mode settings\r\n\
 \r\n\
@@ -244,6 +269,7 @@ static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
+static const char Config_Alarm_Acro[] PROGMEM = "Alarm_Acro";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
@@ -251,6 +277,19 @@ static const char Config_Win_Top[] PROGMEM    = "Win_Top";
 static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
 static const char Config_Alt_Units[] PROGMEM  = "Alt_Units";
 static const char Config_Alt_Step[] PROGMEM   = "Alt_Step";
+static const char Config_Acro_Win[] PROGMEM   = "Acro_Win";
+static const char Config_Exit_Min_Alt[] PROGMEM = "Exit_Min_Alt";
+static const char Config_Exit_Exit_Alt[] PROGMEM = "Exit_Exit_Alt";
+static const char Config_Exit_Num_Down[] PROGMEM = "Exit_Num_Down";
+static const char Config_Exit_Num_Up[] PROGMEM = "Exit_Num_Up";
+static const char Config_Exit_Down_Thresh[] PROGMEM = "Exit_Down_Thresh";
+static const char Config_Exit_Up_Thresh[] PROGMEM = "Exit_Up_Thresh";
+static const char Config_Lane_Width[] PROGMEM = "Lane_Width";
+static const char Config_Lane_Num_LEDs[] PROGMEM = "Lane_Num_LEDs";
+static const char Config_Lane_LED_Offset[] PROGMEM = "Lane_LED_Offset";
+static const char Config_Time_After_Exit[] PROGMEM = "Time_After_Exit";
+static const char Config_Reference_Lat[] PROGMEM = "Reference_Lat";
+static const char Config_Reference_Lon[] PROGMEM = "Reference_Lon";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -282,6 +321,11 @@ static FRESULT Config_ReadSingle(
 	
 	res = f_open(&Main_file, filename, FA_READ);
 	if (res != FR_OK) return res;
+
+	bool ref_lat_valid = false;
+	int32_t ref_lat = 0;
+	bool ref_lon_valid = false;
+	int32_t ref_lon = 0;
 
 	while (!f_eof(&Main_file))
 	{
@@ -328,7 +372,16 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Alt_Units, UBX_alt_units,    val, val >= 0 && val <= 1);
 		HANDLE_VALUE(Config_Alt_Step,  UBX_alt_step,     val, val >= 0);
-		
+		HANDLE_VALUE(Config_Acro_Win, UBX_acro_win, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Exit_Min_Alt,     UBX_exit_finder.min_alt_agl_mm,      val * 1000, TRUE);
+		HANDLE_VALUE(Config_Exit_Exit_Alt,    UBX_exit_finder.cfg_exit_alt_agl_mm, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Exit_Num_Down,    UBX_exit_finder.num_down,            val,        val >= 0 && val <= 255);
+		HANDLE_VALUE(Config_Exit_Num_Up,      UBX_exit_finder.num_up,              val,        val >= 0 && val <= 255);
+		HANDLE_VALUE(Config_Exit_Down_Thresh, UBX_exit_finder.down_thresh_cmps,    val, TRUE);
+		HANDLE_VALUE(Config_Exit_Up_Thresh,   UBX_exit_finder.up_thresh_cmps,      val, TRUE);
+
+		HANDLE_VALUE(Config_Time_After_Exit,  UBX_nav.time_after_exit_ms,          val, TRUE);
+
 		#undef HANDLE_VALUE
 		
 		if (!strcmp_P(name, Config_Init_File))
@@ -358,6 +411,10 @@ static FRESULT Config_ReadSingle(
 		{
 			result[8] = '\0';
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
+		}
+		if (!strcmp_P(name, Config_Alarm_Acro) && UBX_num_alarms <= UBX_MAX_ALARMS)
+		{
+			UBX_alarms[UBX_num_alarms - 1].acro_alarm = val;
 		}
 		
 		if (!strcmp_P(name, Config_Win_Top) && UBX_num_windows < UBX_MAX_WINDOWS)
@@ -397,6 +454,38 @@ static FRESULT Config_ReadSingle(
 		{
 			UBX_speech[UBX_num_speech - 1].decimals = val;
 		}
+
+		if (!strcmp_P(name, Config_Reference_Lat))
+		{
+			ref_lat_valid = true;
+			ref_lat = val;
+		}
+		if (!strcmp_P(name, Config_Reference_Lon))
+		{
+			ref_lon_valid = true;
+			ref_lon = val;
+		}
+
+		if (!strcmp_P(name, Config_Lane_Width))
+		{
+			UBX_pos_leds.set_lane_width(val);
+		}
+		if (!strcmp_P(name, Config_Lane_Num_LEDs))
+		{
+			UBX_pos_leds.set_num_leds(val);
+		}
+		if (!strcmp_P(name, Config_Lane_LED_Offset))
+		{
+			UBX_pos_leds.set_led_offset(val);
+		}
+	}
+
+	if (ref_lat_valid && ref_lon_valid) {
+		flysight::fw::LLA<float> ref_lla;
+		ref_lla.latitude_deg = ref_lat / LAT_LON_SCALE;
+		ref_lla.longitude_deg = ref_lon / LAT_LON_SCALE;
+		ref_lla.height_msl_m = 0;
+		UBX_nav.set_ref_lla(ref_lla);
 	}
 	
 	f_close(&Main_file);
@@ -417,7 +506,7 @@ void Config_Read(void)
 		if (res != FR_OK) 
 		{
 			Main_activeLED = LEDS_RED;
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			UBX_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
 			return ;
 		}
 

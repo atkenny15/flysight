@@ -31,6 +31,7 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "PosLeds.h"
 #include "Tone.h"
 
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
@@ -371,6 +372,8 @@ void Tone_Stop(void)
 		Tone_flags &= ~TONE_FLAGS_STOP;
 		Tone_flags &= ~TONE_FLAGS_LOAD;
 	}
+
+	PosLeds_display();
 }
 
 void Tone_Task(void)

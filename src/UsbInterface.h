@@ -36,6 +36,10 @@
 #ifndef _USB_INTERFACE_H_
 #define _USB_INTERFACE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 	/* Includes: */
 		#include <avr/io.h>
 		#include <avr/wdt.h>
@@ -73,5 +77,9 @@
 		bool CALLBACK_MS_Device_SCSICommandReceived(USB_ClassInfo_MS_Device_t* const MSInterfaceInfo);
 
     void USBInterfaceTask(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

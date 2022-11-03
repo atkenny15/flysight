@@ -247,7 +247,7 @@ int main(void)
 				Main_activeLED = LEDS_RED;
 			}
 
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			UBX_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED, true);
 		}
 	}
 	else
@@ -262,7 +262,7 @@ int main(void)
 		{
 			Main_activeLED = LEDS_RED;
 		}
-		LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+		UBX_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED, true);
 
 		if (count == 1)
 		{

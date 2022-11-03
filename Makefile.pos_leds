@@ -23,7 +23,7 @@
 # ****************************************************************************
 
 # Define FLYSIGHT_VERSION automatically from source control
-VERSION_OPT = -DFLYSIGHT_VERSION='"$(shell git describe --abbrev=6 --dirty --always)"'
+VERSION_OPT = -DFLYSIGHT_VERSION='"$(shell git describe --abbrev=6 --dirty --always)-pos-leds"'
 
 # Run "make help" for target help.
 
@@ -33,7 +33,7 @@ BOARD        = USER
 F_CPU        = 8000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = s
-TARGET       = flysight
+TARGET       = flysight_pos_leds
 SRC          = src/Main.cpp                                                \
 	           src/Config.cpp                                              \
 	           src/Debug.c                                                 \
@@ -57,9 +57,9 @@ SRC          = src/Main.cpp                                                \
 	           src/navigation.cpp                                          \
 	           src/position_leds.cpp                                       \
 	           $(LUFA_SRC_USB)                                             \
-	           $(LUFA_SRC_USBCLASS) 
+	           $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = vendor/lufa/LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -Isrc -Isrc/Config/ -Ivendor -fdata-sections $(VERSION_OPT)
+CC_FLAGS     = -DPOSITION_LEDS -DUSE_LUFA_CONFIG_HEADER -Isrc -Isrc/Config/ -Ivendor -fdata-sections $(VERSION_OPT)
 CPP_FLAGS    = -fno-threadsafe-statics
 LD_FLAGS     =
 CPP_STANDARD = c++11

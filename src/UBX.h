@@ -26,6 +26,10 @@
 
 #include <avr/io.h>
 
+#include "exit_finder.h"
+#include "navigation.h"
+#include "position_leds.h"
+
 #define UBX_MAX_ALARMS   10
 #define UBX_MAX_WINDOWS  2
 #define UBX_MAX_SPEECH   3
@@ -39,11 +43,14 @@
 #define UBX_UNITS_METERS    0
 #define UBX_UNITS_FEET      1
 
+#define LAT_LON_SCALE 1e7
+
 typedef struct
 {
 	int32_t elev;
 	uint8_t type;
 	char    filename[9];
+	uint8_t acro_alarm;
 }
 UBX_alarm_t;
 
@@ -99,6 +106,8 @@ extern uint16_t     UBX_sp_rate;
 extern uint8_t   UBX_alt_units;
 extern int32_t   UBX_alt_step;
 
+extern int32_t   UBX_acro_win;
+
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
@@ -109,8 +118,13 @@ extern uint8_t    UBX_num_windows;
 
 extern int32_t    UBX_dz_elev;
 
+extern flysight::fw::ExitFinder UBX_exit_finder;
+extern flysight::fw::Navigation<float> UBX_nav;
+extern flysight::fw::PositionLeds<> UBX_pos_leds;
+
 void UBX_Init(void);
 void UBX_Task(void);
 void UBX_Update(void);
+void UBX_ChangeLEDs(uint8_t led_mask, uint8_t active_mask, bool display = false);
 
 #endif

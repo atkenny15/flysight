@@ -25,6 +25,10 @@
 #ifndef FLYSIGHT_DATAFLASH_MANAGER
 #define FLYSIGHT_DATAFLASH_MANAGER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <LUFA/Drivers/USB/Class/MassStorageClass.h>
 
 #define VIRTUAL_MEMORY_BLOCK_SIZE 512
@@ -44,5 +48,9 @@ void MMC_ReadBlocks(
 bool MMC_CheckDataflashOperation(void);
 
 uint32_t MMC_MediaBlocks(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
