@@ -24,7 +24,7 @@
 #ifdef __AVR__
 #    include "exit_finder.h"
 #else
-#    include "flysight/fw/exit_finder.h"
+#    include "flysight/fw/exit_finder.hh"
 #endif
 
 namespace flysight {

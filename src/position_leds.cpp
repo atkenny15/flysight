@@ -23,10 +23,11 @@
 
 #ifdef __AVR__
 #    include "position_leds.h"
+
 #    include <avr/interrupt.h>
 #    include <avr/io.h>
 #else
-#    include "flysight/fw/position_leds.h"
+#    include "flysight/fw/position_leds.hh"
 #endif
 
 namespace flysight {

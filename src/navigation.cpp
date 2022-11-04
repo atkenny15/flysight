@@ -24,7 +24,7 @@
 #ifdef __AVR__
 #    include "navigation.h"
 #else
-#    include "flysight/fw/navigation.h"
+#    include "flysight/fw/navigation.hh"
 #endif
 
 namespace flysight {
