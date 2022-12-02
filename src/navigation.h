@@ -231,7 +231,7 @@ struct ECEF {
 };
 
 template<typename T>
-class Navigation {
+class Navigation { // LCOV_EXCL_LINE
 public:
     /// Time after exit when the lane is valid
     int32_t time_after_exit_ms = -1;
