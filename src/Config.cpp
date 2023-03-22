@@ -184,6 +184,8 @@ Time_After_Exit:      -1 ; Lane start time after ext (ms) (negative to disable)\
 Num_Blink_LEDs:       -1 ; Number of leds to blink before exit detection\r\n\
 Reference_Lat:         0 ; Reference latitude (deg * 1e7)\r\n\
 Reference_Lon:         0 ; Reference longitude (deg * 1e7)\r\n\
+Reference_LatF:      0.0 ; Reference latitude (deg)\r\n\
+Reference_LonF:      0.0 ; Reference longitude (deg)\r\n\
 \r\n\
 ; Alarm settings\r\n\
 \r\n\
@@ -292,6 +294,8 @@ static const char Config_Num_Blink_LEDs[] PROGMEM = "Num_Blink_LEDs";
 static const char Config_Time_After_Exit[] PROGMEM = "Time_After_Exit";
 static const char Config_Reference_Lat[] PROGMEM = "Reference_Lat";
 static const char Config_Reference_Lon[] PROGMEM = "Reference_Lon";
+static const char Config_Reference_LatF[] PROGMEM = "Reference_LatF";
+static const char Config_Reference_LonF[] PROGMEM = "Reference_LonF";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -313,6 +317,7 @@ static FRESULT Config_ReadSingle(
 	char    *name;
 	char    *result;
 	int32_t val;
+	float   valf;
 	
 	uint8_t first = 0;
 
@@ -325,9 +330,9 @@ static FRESULT Config_ReadSingle(
 	if (res != FR_OK) return res;
 
 	bool ref_lat_valid = false;
-	int32_t ref_lat = 0;
+	float ref_lat = 0.0;
 	bool ref_lon_valid = false;
-	int32_t ref_lon = 0;
+	float ref_lon = 0.0;
 
 	while (!f_eof(&Main_file))
 	{
@@ -343,6 +348,7 @@ static FRESULT Config_ReadSingle(
 		if (result == 0) continue ;
 		
 		val = atol(result);
+		valf = atof(result);
 		
 		#define HANDLE_VALUE(s,w,r,t) \
 			if ((t) && !strcmp_P(name, (s))) { (w) = (r); }
@@ -461,12 +467,23 @@ static FRESULT Config_ReadSingle(
 		if (!strcmp_P(name, Config_Reference_Lat))
 		{
 			ref_lat_valid = true;
-			ref_lat = val;
+			ref_lat = val / LAT_LON_SCALE;
 		}
+		if (!strcmp_P(name, Config_Reference_LatF))
+		{
+			ref_lat_valid = true;
+			ref_lat = valf;
+		}
+
 		if (!strcmp_P(name, Config_Reference_Lon))
 		{
 			ref_lon_valid = true;
-			ref_lon = val;
+			ref_lon = val / LAT_LON_SCALE;
+		}
+		if (!strcmp_P(name, Config_Reference_LonF))
+		{
+			ref_lon_valid = true;
+			ref_lon = valf;
 		}
 
 		if (!strcmp_P(name, Config_Lane_Width))
@@ -485,8 +502,8 @@ static FRESULT Config_ReadSingle(
 
 	if (ref_lat_valid && ref_lon_valid) {
 		flysight::fw::LLA<float> ref_lla;
-		ref_lla.latitude_deg = ref_lat / LAT_LON_SCALE;
-		ref_lla.longitude_deg = ref_lon / LAT_LON_SCALE;
+		ref_lla.latitude_deg = ref_lat;
+		ref_lla.longitude_deg = ref_lon;
 		ref_lla.height_msl_m = 0;
 		UBX_nav.set_ref_lla(ref_lla);
 	}
