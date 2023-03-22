@@ -40,9 +40,10 @@
 #define FALSE 0
 #define TRUE  (!FALSE)
 
-#define CONFIG_FIRST_ALARM  0x01
-#define CONFIG_FIRST_WINDOW 0x02
-#define CONFIG_FIRST_SPEECH 0x04
+#define CONFIG_FIRST_ALARM  (1 << 0)
+#define CONFIG_FIRST_WINDOW (1 << 1)
+#define CONFIG_FIRST_SPEECH (1 << 2)
+#define CONFIG_FIRST_WIND   (1 << 3)
 
 static const char Config_default[] PROGMEM = "\
 ; Firmware version " FLYSIGHT_VERSION "\r\n\
@@ -273,6 +274,9 @@ static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_Alarm_Acro[] PROGMEM = "Alarm_Acro";
+static const char Config_Wind_hMSL[] PROGMEM  = "Wind_hMSL";
+static const char Config_Wind_velN[] PROGMEM  = "Wind_velN";
+static const char Config_Wind_velE[] PROGMEM  = "Wind_velE";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
@@ -426,6 +430,28 @@ static FRESULT Config_ReadSingle(
 			UBX_alarms[UBX_num_alarms - 1].acro_alarm = val;
 		}
 		
+		if (!strcmp_P(name, Config_Wind_hMSL) && UBX_num_winds < UBX_MAX_ALARMS)
+		{
+			if (!(first & CONFIG_FIRST_WIND))
+			{
+				UBX_num_winds = 0;
+				first |= CONFIG_FIRST_WIND;
+			}
+
+			++UBX_num_winds;
+			UBX_winds[UBX_num_winds - 1].hMSL = val;
+			UBX_winds[UBX_num_winds - 1].velN = 0;
+			UBX_winds[UBX_num_winds - 1].velE = 0;
+		}
+		if (!strcmp_P(name, Config_Wind_velN) && UBX_num_winds <= UBX_MAX_WINDS)
+		{
+			UBX_winds[UBX_num_winds - 1].velN = val;
+		}
+		if (!strcmp_P(name, Config_Wind_velE) && UBX_num_winds <= UBX_MAX_WINDS)
+		{
+			UBX_winds[UBX_num_winds - 1].velE = val;
+		}
+
 		if (!strcmp_P(name, Config_Win_Top) && UBX_num_windows < UBX_MAX_WINDOWS)
 		{
 			if (!(first & CONFIG_FIRST_WINDOW))

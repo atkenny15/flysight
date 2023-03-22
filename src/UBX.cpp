@@ -336,6 +336,9 @@ uint8_t     UBX_num_alarms   = 0;
 int32_t     UBX_alarm_window_above = 0;
 int32_t     UBX_alarm_window_below = 0;
 
+UBX_wind_t UBX_winds[UBX_MAX_WINDS];
+uint8_t    UBX_num_winds = 0;
+
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
 
@@ -369,7 +372,9 @@ typedef struct
 	int32_t  velE;     // East velocity                (cm/s)
 	int32_t  velD;     // Down velocity                (cm/s)
 	int32_t  speed;    // 3D speed                     (cm/s)
+	int32_t  speed_corr;      // 3D speed (wind corrected)    (cm/s)
 	int32_t  gSpeed;   // Ground speed                 (cm/s)
+	int32_t  gSpeed_corr;     // Ground speed (wind corrected) (cm/s)
 	int32_t  heading;  // 2D heading                   (deg)
 	uint32_t sAcc;     // Speed accuracy estimate      (cm/s)
 	uint32_t cAcc;     // Heading accuracy estimate    (deg)
@@ -810,6 +815,60 @@ static void UBX_SetTone(
 	#undef UNDER
 }
 
+template<typename TX, typename TY>
+TY interpolate(const TX x0, const TY y0, const TX x1, const TY y1, const TX x) {
+    const auto m = (y1 - y0) / (x1 - x0);
+    const auto b = y1 - m * x1;
+    return m * x + b;
+}
+
+static uint8_t find_winds(const int32_t height_msl_mm) {
+	// TODO(akenny): Binary search
+	uint8_t ret = 0;
+	for (; ret < UBX_num_winds; ++ret) {
+		if (height_msl_mm < UBX_winds[ret].hMSL) {
+			break;
+		}
+	}
+	return ret;
+}
+
+static void wind_correction(UBX_saved_t *current) {
+	const uint8_t winds_index = find_winds(current->hMSL);
+	UBX_wind_t wind{};
+	if (winds_index == 0) {
+		wind = UBX_winds[0];
+	} else {
+		const UBX_wind_t *a = &UBX_winds[winds_index-1];
+		const UBX_wind_t *b = &UBX_winds[winds_index];
+		wind.velN = interpolate<float, int32_t>(a->hMSL, a->velN, b->hMSL, b->velN, current->hMSL);
+		wind.velE = interpolate<float, int32_t>(a->hMSL, a->velE, b->hMSL, b->velE, current->hMSL);
+	}
+
+	const int32_t velN_corr = current->velN - wind.velN;
+	const int32_t velE_corr = current->velE - wind.velE;
+
+	const float temp = pow(velN_corr, 2) + pow(velE_corr, 2);
+	current->gSpeed_corr = sqrt(temp);
+	current->speed_corr = sqrt(temp + pow(current->velD, 2));
+}
+
+static int32_t get_current_gspeed(UBX_saved_t *current)
+{
+	if (UBX_num_winds != 0) {
+		return current->gSpeed_corr;
+	}
+	return current->gSpeed;
+}
+
+static int32_t get_current_speed(UBX_saved_t *current)
+{
+	if (UBX_num_winds != 0) {
+		return current->speed_corr;
+	}
+	return current->speed;
+}
+
 static void UBX_GetValues(
 	UBX_saved_t *current,
 	uint8_t mode, 
@@ -843,7 +902,7 @@ static void UBX_GetValues(
 	switch (mode)
 	{
 	case 0: // Horizontal speed
-		*val = (current->gSpeed * 1024) / speed_mul;
+		*val = (get_current_gspeed(current) * 1024) / speed_mul;
 		break;
 	case 1: // Vertical speed
 		*val = (current->velD * 1024) / speed_mul;
@@ -851,24 +910,24 @@ static void UBX_GetValues(
 	case 2: // Glide ratio
 		if (current->velD != 0)
 		{
-			*val = 10000 * (int32_t) current->gSpeed / current->velD;
+			*val = 10000 * (int32_t) get_current_gspeed(current) / current->velD;
 			*min *= 100;
 			*max *= 100;
 		}
 		break;
 	case 3: // Inverse glide ratio
-		if (current->gSpeed != 0)
+		if (get_current_gspeed(current) != 0)
 		{
-			*val = 10000 * current->velD / (int32_t) current->gSpeed;
+			*val = 10000 * current->velD / (int32_t) get_current_gspeed(current);
 			*min *= 100;
 			*max *= 100;
 		}
 		break;
 	case 4: // Total speed
-		*val = (current->speed * 1024) / speed_mul;
+		*val = (get_current_speed(current) * 1024) / speed_mul;
 		break;
 	case 11: // Dive angle
-		*val = atan2(current->velD, current->gSpeed) / M_PI * 180;
+		*val = atan2(current->velD, get_current_gspeed(current)) / M_PI * 180;
 		break;
 	}
 }
@@ -978,7 +1037,7 @@ static void UBX_SpeakValue(
 	switch (UBX_speech[UBX_cur_speech].mode)
 	{
 	case 0: // Horizontal speed
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->gSpeed * 1024) / speed_mul, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (get_current_gspeed(current) * 1024) / speed_mul, 2, 1, 0);
 		break;
 	case 1: // Vertical speed
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->velD * 1024) / speed_mul, 2, 1, 0);
@@ -986,7 +1045,7 @@ static void UBX_SpeakValue(
 	case 2: // Glide ratio
 		if (current->velD != 0)
 		{
-			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->gSpeed / current->velD, 2, 1, 0);
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) get_current_gspeed(current) / current->velD, 2, 1, 0);
 		}
 		else
 		{
@@ -994,9 +1053,9 @@ static void UBX_SpeakValue(
 		}
 		break;
 	case 3: // Inverse glide ratio
-		if (current->gSpeed != 0)
+		if (get_current_gspeed(current) != 0)
 		{
-			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->velD / current->gSpeed, 2, 1, 0);
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->velD / get_current_gspeed(current), 2, 1, 0);
 		}
 		else
 		{
@@ -1004,10 +1063,10 @@ static void UBX_SpeakValue(
 		}
 		break;
 	case 4: // Total speed
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->speed * 1024) / speed_mul, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (get_current_speed(current) * 1024) / speed_mul, 2, 1, 0);
 		break;
 	case 11: // Dive angle
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, get_current_gspeed(current)) / M_PI * 180, 2, 1, 0);
 		break;
 	case 12: // Altitude
 		if (UBX_speech[UBX_cur_speech].units == UBX_UNITS_KMH)
@@ -1180,7 +1239,7 @@ static void UBX_UpdateAlarms(
 		{
 			if ((step_elev >= min && step_elev < max) &&
 			    ABS(current->velD) >= UBX_threshold &&
-			    current->gSpeed >= UBX_hThreshold)
+			    get_current_gspeed(current) >= UBX_hThreshold)
 			{
 				UBX_speech_ptr = UBX_speech_buf;
 				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
@@ -1235,7 +1294,7 @@ static void UBX_UpdateTones(
 	if (!UBX_suppress_tone)
 	{
 		if (ABS(current->velD) >= UBX_threshold && 
-			current->gSpeed >= UBX_hThreshold)
+			get_current_gspeed(current) >= UBX_hThreshold)
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
 				
@@ -1444,6 +1503,10 @@ static void UBX_HandleVelocity(void)
 	current->heading = nav_velned->heading;
 	current->sAcc    = nav_velned->sAcc;
 	current->cAcc    = nav_velned->cAcc;
+
+	if (UBX_num_winds != 0) {
+		wind_correction(current);
+	}
 
 	UBX_ReceiveMessage(UBX_MSG_VELNED, nav_velned->iTOW);
 }

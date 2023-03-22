@@ -31,6 +31,7 @@
 #include "position_leds.h"
 
 #define UBX_MAX_ALARMS   10
+#define UBX_MAX_WINDS    10
 #define UBX_MAX_WINDOWS  2
 #define UBX_MAX_SPEECH   3
 
@@ -53,6 +54,14 @@ typedef struct
 	uint8_t acro_alarm;
 }
 UBX_alarm_t;
+
+typedef struct
+{
+	int32_t hMSL;	// Height above mean sea level (mm)
+	int32_t velE;	// U (east) component of wind (cm/s)
+	int32_t velN;	// V (north) component of wind (cm/s)
+}
+UBX_wind_t;
 
 typedef struct
 {
@@ -98,6 +107,9 @@ extern UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
 extern uint8_t   UBX_num_alarms;
 extern int32_t   UBX_alarm_window_above;
 extern int32_t   UBX_alarm_window_below;
+
+extern UBX_wind_t UBX_winds[UBX_MAX_WINDS];
+extern uint8_t    UBX_num_winds;
 
 extern UBX_speech_t UBX_speech[UBX_MAX_SPEECH];
 extern uint8_t      UBX_num_speech;
