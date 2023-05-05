@@ -1,9 +1,9 @@
 ```
-mkdir build
-cd build
-python3 -m venv
+python3 -m venv venv
 source venv/bin/activate
 pip3 install conan
-conan install ..
-cmake ..
+mkdir build
+cd build
+conan install . --output-folder=build --build=missing
+cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
