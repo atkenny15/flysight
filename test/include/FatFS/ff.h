@@ -35,7 +35,7 @@ void f_close(FIL* file);
 
 bool f_eof(FIL* file);
 
-char * f_gets(void* buffer, size_t size, FIL* file);
+char* f_gets(void* buffer, size_t size, FIL* file);
 
 void f_puts(const void* buffer, FIL* file);
 

@@ -19,13 +19,13 @@ std::string_view g_cwd;
 std::string to_lower(const std::string_view s) {
     std::string ret;
     ret.reserve(s.size());
-    for (const auto &c : s) {
+    for (const auto& c : s) {
         ret.push_back(std::tolower(c));
     }
     return ret;
 }
 
-}
+} // namespace
 
 void f_putc(char c, FIL* file) {
     TODO();
@@ -59,7 +59,7 @@ FRESULT f_open(FIL* file, const char* filename, const int perms) {
     const auto path = std::filesystem::path(TEST_DATA_PATH);
     std::optional<std::filesystem::path> found;
 
-    for (const auto &entry : std::filesystem::directory_iterator(path)) {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
         if (to_lower(entry.path().filename().string()) == filename_lc) {
             found = entry.path();
         }
@@ -102,8 +102,8 @@ bool f_eof(FIL* file) {
     return feof(file->handle) != 0;
 }
 
-char * f_gets(void* buffer, size_t size, FIL* file) {
-    return fgets(reinterpret_cast<char *>(buffer), size, file->handle);
+char* f_gets(void* buffer, size_t size, FIL* file) {
+    return fgets(reinterpret_cast<char*>(buffer), size, file->handle);
 }
 
 void f_puts(const void* buffer, FIL* file) {
