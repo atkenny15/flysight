@@ -1,0 +1,190 @@
+; Firmware version v20210520
+
+; For information on configuring FlySight, please go to
+;     http://flysight.ca/wiki
+
+; GPS settings
+
+Model:     7     ; Dynamic model
+                 ;   0 = Portable
+                 ;   2 = Stationary
+                 ;   3 = Pedestrian
+                 ;   4 = Automotive
+                 ;   5 = Sea
+                 ;   6 = Airborne with < 1 G acceleration
+                 ;   7 = Airborne with < 2 G acceleration
+                 ;   8 = Airborne with < 4 G acceleration
+Rate:      100   ; Measurement rate (ms)
+
+; Tone settings
+
+Limits:    1     ; Behaviour when outside bounds
+                 ;   0 = No tone
+                 ;   1 = Min/max tone
+                 ;   2 = Chirp up/down
+                 ;   3 = Chirp down/up
+Volume:    6     ; 0 (min) to 8 (max)
+
+; Rate settings
+
+Min_Rate:  100   ; Minimum rate (Hz * 100)
+Max_Rate:  500   ; Maximum rate (Hz * 100)
+Flatline:  0     ; Flatline at minimum rate
+                 ;   0 = No
+                 ;   1 = Yes
+
+; Thresholds
+
+V_Thresh:  1000  ; Minimum vertical speed for tone (cm/s)
+H_Thresh:  0     ; Minimum horizontal speed for tone (cm/s)
+
+; Acro settings
+
+Acro_Win:           -1   ; Acro window, meters below exit
+
+; Exit detection
+
+Exit_Min_Alt:       -1   ; Do not detect an exit if below this altitude in meters
+                         ; (negative to disable exit detection)
+Exit_Exit_Alt:      -1   ; Do not detect an exit if above this altitude in meters
+                         ; (negative to disable this check)
+Exit_Num_Down:      5    ; Consecutive points down to indicate an exit
+Exit_Num_Up:        50   ; Consecutive points up reset the exit altitude
+Exit_Down_Thresh:   800  ; Speed (cm/s) to indicate down (positive) (initialize exit altitude)
+Exit_Up_Thresh:     -800 ; Speed (cm/s) to indicate up (negative) (reset exit altitude)
+
+; Performance lane
+
+Lane_Width:          600 ; Width of lane in meters
+Lane_Num_LEDs:        14 ; Number of leds for lane indicator
+Lane_LED_Offset:       3 ; First LED in display
+Time_After_Exit:      -1 ; Lane start time after ext (ms) (negative to disable)
+Reference_Lat:         0 ; Reference latitude (deg * 1e7)
+Reference_Lon:         0 ; Reference longitude (deg * 1e7)
+
+; Enable Performance lane
+
+Exit_Min_Alt:        2286 ; Do not detect an exit if below this altitude in meters
+Exit_Exit_Alt:       3353 ; Do not detect an exit if above this altitude in meters
+Time_After_Exit:    10000 ; Lane start time after ext (ms) (negative to disable)
+
+; ref_name: s2n_1
+;Reference_Lat:  326680550
+;Reference_Lon: -1116970660
+
+; ref_name: s2n_2
+;Reference_Lat:  326648030
+;Reference_Lon: -1116883540
+
+; ref_name: s2n_3
+;Reference_Lat:  326707820
+;Reference_Lon: -1116804790
+
+; ref_name: s2n_4
+;Reference_Lat:  326691750
+;Reference_Lon: -1116722180
+
+; ref_name: spa_fbo
+;Reference_Lat:  411449087
+;Reference_Lon: -801676433
+
+; ref_name: spa_landmark
+;Reference_Lat:  411359021
+;Reference_Lon: -801791902
+
+; ref_name: runway
+Reference_Lat:  411458368
+Reference_Lon: -801604920
+
+; Miscellaneous
+
+Use_SAS:   0     ; Use skydiver's airspeed
+                 ;   0 = No
+                 ;   1 = Yes
+TZ_Offset: 0     ; Timezone offset of output files in seconds
+                 ;   -14400 = UTC-4 (EDT)
+                 ;   -18000 = UTC-5 (EST, CDT)
+                 ;   -21600 = UTC-6 (CST, MDT)
+                 ;   -25200 = UTC-7 (MST, PDT)
+                 ;   -28800 = UTC-8 (PST)
+
+; Initialization
+
+Init_Mode: 0     ; When the FlySight is powered on
+                 ;   0 = Do nothing
+                 ;   1 = Test speech mode
+                 ;   2 = Play file
+Init_File: 0     ; File to be played
+
+; Alarm settings
+
+; WARNING: GPS measurements depend on very weak signals
+;          received from orbiting satellites. As such, they
+;          are prone to interference, and should NEVER be
+;          relied upon for life saving purposes.
+
+;          UNDER NO CIRCUMSTANCES SHOULD THESE ALARMS BE
+;          USED TO INDICATE DEPLOYMENT OR BREAKOFF ALTITUDE.
+
+; NOTE:    Alarm elevations are given in meters above ground
+;          elevation, which is specified in DZ_Elev.
+
+Win_Above:    20 ; Window above each alarm (m)
+Win_Below:    20 ; Window below each alarm (m)
+DZ_Elev:     418 ; Ground elevation (m above sea level) - Skydive Pennsylvania
+;DZ_Elev:     338 ; Ground elevation (m above sea level) - Cleveland Skydiving Center
+;DZ_Elev:     472 ; Ground elevation (m above sea level) - Sawtooth
+;DZ_Elev:     24 ; Ground elevation (m above sea level) - Skydive Deland
+;DZ_Elev:     188 ; Ground elevation (m above sea level) - Skydive Chicago
+
+; Altitude mode settings
+
+; WARNING: GPS measurements depend on very weak signals
+;          received from orbiting satellites. As such, they
+;          are prone to interference, and should NEVER be
+;          relied upon for life saving purposes.
+
+;          UNDER NO CIRCUMSTANCES SHOULD ALTITUDE MODE BE
+;          USED TO INDICATE DEPLOYMENT OR BREAKOFF ALTITUDE.
+
+; NOTE:    Altitude is given relative to ground elevation,
+;          which is specified in DZ_Elev. Altitude mode will
+;          not function below 1500 m above ground.
+
+Alt_Units:     1 ; Altitude units
+                 ;   0 = m
+                 ;   1 = ft
+Alt_Step:      0 ; Altitude between announcements
+                 ;   0 = No altitude
+
+Wind_hMSL:    1336687 ; 918.687 (m agl)
+Wind_velE:       9177 ; 33.038 (kmph)
+Wind_velN:       3673 ; 13.224 (kmph)
+
+Wind_hMSL:    1643127 ; 1225.128 (m agl)
+Wind_velE:       9909 ; 35.676 (kmph)
+Wind_velN:       2602 ; 9.367 (kmph)
+
+Wind_hMSL:    1991449 ; 1573.449 (m agl)
+Wind_velE:      10592 ; 38.131 (kmph)
+Wind_velN:       1336 ; 4.810 (kmph)
+
+Wind_hMSL:    2386075 ; 1968.076 (m agl)
+Wind_velE:      12213 ; 43.970 (kmph)
+Wind_velN:        790 ; 2.847 (kmph)
+
+Wind_hMSL:    2832282 ; 2414.283 (m agl)
+Wind_velE:      14124 ; 50.847 (kmph)
+Wind_velN:       1145 ; 4.126 (kmph)
+
+Wind_hMSL:    3336756 ; 2918.756 (m agl)
+Wind_velE:      15877 ; 57.159 (kmph)
+Wind_velN:       1725 ; 6.213 (kmph)
+
+Wind_hMSL:    3906311 ; 3488.312 (m agl)
+Wind_velE:      16723 ; 60.205 (kmph)
+Wind_velN:       1625 ; 5.850 (kmph)
+
+Wind_hMSL:    4533619 ; 4115.620 (m agl)
+Wind_velE:      16788 ; 60.439 (kmph)
+Wind_velN:        989 ; 3.564 (kmph)
