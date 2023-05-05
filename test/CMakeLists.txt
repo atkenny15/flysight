@@ -3,9 +3,9 @@ project(flysight_fw_tests)
 
 include(CTest)
 
-set(CONAN_SYSTEM_INCLUDES ON)
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+#set(CONAN_SYSTEM_INCLUDES ON)
+#include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+#include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 find_package(Catch2 REQUIRED)
