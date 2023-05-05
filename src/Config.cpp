@@ -430,7 +430,7 @@ static FRESULT Config_ReadSingle(
 			UBX_alarms[UBX_num_alarms - 1].acro_alarm = val;
 		}
 		
-		if (!strcmp_P(name, Config_Wind_hMSL) && UBX_num_winds < UBX_MAX_ALARMS)
+		if (!strcmp_P(name, Config_Wind_hMSL) && UBX_num_winds < UBX_MAX_WINDS)
 		{
 			if (!(first & CONFIG_FIRST_WIND))
 			{
