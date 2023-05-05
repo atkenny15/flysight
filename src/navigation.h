@@ -243,6 +243,9 @@ public:
         ref_lla_valid_ = true;
     }
 
+    bool  is_ref_lla_valid() const noexcept { return ref_lla_valid_; }
+    const LLA<T>& get_ref_lla() const noexcept { return ref_lla_; }
+
     bool is_enabled() const noexcept { return time_after_exit_ms >= 0; }
 
     /// Get the distance in meters from the center of the lane.

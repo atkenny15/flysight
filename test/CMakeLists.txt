@@ -13,9 +13,13 @@ find_package(fmt REQUIRED)
 
 add_compile_options(-Wno-volatile)
 
+add_definitions(-DTEST_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
 add_executable(common_test
     common_test.cc
-    avr/io.c
+    src/avr/io.c
+    src/avr/pgmspace.c
+    src/FatFS/ff.cpp
     ../src/Config.cpp
     ../src/exit_finder.cpp
     ../src/Log.c

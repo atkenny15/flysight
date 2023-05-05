@@ -93,8 +93,12 @@ Time_After_Exit:    10000 ; Lane start time after ext (ms) (negative to disable)
 ;Reference_Lon: -801791902
 
 ; ref_name: runway
-Reference_Lat:  411458368
-Reference_Lon: -801604920
+;Reference_Lat:  411458368
+;Reference_Lon: -801604920
+
+; ref_name: runway
+Reference_LatF:  41.1458368
+Reference_LonF: -80.1604920
 
 ; Miscellaneous
 

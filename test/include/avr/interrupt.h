@@ -1,3 +1,5 @@
 #pragma once
 
-#define ISR(x) void x(); void x()
+#define ISR(x) \
+    void x();  \
+    void x()

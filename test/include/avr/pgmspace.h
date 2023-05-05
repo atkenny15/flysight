@@ -1,20 +1,18 @@
 #pragma once
 
-#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
+#include <stdint.h>
 
-inline uint8_t pgm_read_byte(const void * addr) {
-    (void) addr;
-    return 0;
-}
+uint8_t pgm_read_byte(const void* addr);
 
-inline uint16_t pgm_read_word(const void *addr) {
-    (void) addr;
-    return 0;
-}
+uint16_t pgm_read_word(const void* addr);
 
-inline void eeprom_read_block (void *dst, const void *src, size_t n) {
-    (void) dst;
-    (void) src;
-    (void) n;
+void eeprom_read_block(void* dst, const void* src, size_t n);
+
+#ifdef __cplusplus
 }
+#endif
