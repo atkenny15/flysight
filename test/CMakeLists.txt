@@ -11,7 +11,7 @@ include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 find_package(Catch2 3 REQUIRED)
 find_package(fmt REQUIRED)
 
-add_executable(common_test common_test.cc ../src/Config.cpp)
+add_executable(common_test common_test.cc ../src/Config.cpp ../src/UBX.cpp)
 target_include_directories(common_test
     PRIVATE include
     PRIVATE ../src
