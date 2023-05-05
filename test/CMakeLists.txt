@@ -11,7 +11,24 @@ include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 find_package(Catch2 3 REQUIRED)
 find_package(fmt REQUIRED)
 
-add_executable(common_test common_test.cc ../src/Config.cpp ../src/UBX.cpp)
+add_compile_options(-Wno-volatile)
+
+add_executable(common_test
+    common_test.cc
+    avr/io.c
+    ../src/Config.cpp
+    ../src/exit_finder.cpp
+    ../src/Log.c
+    ../src/UBX.cpp
+    ../src/PosLeds.cpp
+    ../src/position_leds.cpp
+    ../src/Power.c
+    ../src/Time.c
+    ../src/Timer.cpp
+    ../src/Tone.c
+    uart.c
+)
+target_compile_definitions(common_test PUBLIC RAMEND=0x1000)
 target_include_directories(common_test
     PRIVATE include
     PRIVATE ../src

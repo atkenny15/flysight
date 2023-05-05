@@ -476,6 +476,7 @@ void UBX_ChangeLEDs(const uint8_t led_mask, const uint8_t active_mask, const boo
 		UBX_pos_leds.display();
 	}
 #else
+        (void) display;
 	PORTC &= ~led_mask;
 	PORTC |= active_mask;
 #endif

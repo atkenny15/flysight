@@ -21,3 +21,7 @@ Thumbs.db
 /Docs/
 obj/
 Build/
+tags
+test/build
+test/venv
+test/CMakeUserPresets.json

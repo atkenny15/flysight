@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "Time.h"
 
 /** One hour, expressed in seconds */
 #define ONE_HOUR 3600
