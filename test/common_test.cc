@@ -6,6 +6,7 @@
 
 uint8_t Main_activeLED = 0;
 uint8_t Main_buffer[MAIN_BUFFER_SIZE];
+FIL     Main_file;
 
 TEST_CASE("something", "[something]") {
     Config_Read();
