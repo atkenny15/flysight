@@ -1,12 +1,17 @@
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip3 install conan
+pip install -r requirements.txt
+
 conan install . --output-folder=build --build=missing
+cmake --preset conan-release
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j4
+make test
 
 conan install . --output-folder=build --build=missing -s build_type=Debug
+cmake --preset conan-release
 cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+make -j4
+make test
 ```
