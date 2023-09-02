@@ -87,17 +87,31 @@ public:
 
     size_t size() const { return num_leds_ - led_offset_; }
 
-    void display_value(const uint32_t val, const int step = 1) {
-        set_value(val, step);
+    void display_value(const uint32_t color_rgb, const int step = 1) {
+        set_value(color_rgb, step);
         display();
     }
 
-    void set_value(const uint32_t val, const int step = 1) {
+    void set_value(const uint32_t color_rgb, const int step = 1) {
         for (size_t i = 0; i < size(); ++i) {
             if (static_cast<int>(i) % step == 0) {
-                set_led(i, val);
+                set_led(i, color_rgb);
             }
             else {
+                set_led(i, 0);
+            }
+        }
+        changed_ = true;
+    }
+
+    void set_num_leds(const uint8_t num_leds, const uint32_t color_rgb) {
+        for (size_t i = 0; i < size(); ++i) {
+            const bool is_center = i == size() / 2;
+            if (is_center) {
+                set_led(i, LED_MIDDLE);
+            } else if (i < num_leds || (size() - i - 1) < num_leds) {
+                set_led(i, color_rgb);
+            } else {
                 set_led(i, 0);
             }
         }
@@ -162,15 +176,15 @@ public:
         changed_ = false;
     }
 
-    void set_led(size_t index, const uint32_t val) {
-        if (get_led(index) == val) {
+    void set_led(size_t index, const uint32_t color_rgb) {
+        if (get_led(index) == color_rgb) {
             return;
         }
 
         index += led_offset_;
-        leds_[index * BYTES_PER_PIXEL + 0] = (val >> 0) & 0xff;
-        leds_[index * BYTES_PER_PIXEL + 1] = (val >> 8) & 0xff;
-        leds_[index * BYTES_PER_PIXEL + 2] = (val >> 16) & 0xff;
+        leds_[index * BYTES_PER_PIXEL + 0] = (color_rgb >> 0) & 0xff;
+        leds_[index * BYTES_PER_PIXEL + 1] = (color_rgb >> 8) & 0xff;
+        leds_[index * BYTES_PER_PIXEL + 2] = (color_rgb >> 16) & 0xff;
         changed_ = true;
     }
 
