@@ -118,6 +118,7 @@ extern uint8_t    UBX_num_windows;
 
 extern int32_t    UBX_dz_elev;
 
+extern int8_t UBX_num_blink_leds;
 extern flysight::fw::ExitFinder UBX_exit_finder;
 extern flysight::fw::Navigation<float> UBX_nav;
 extern flysight::fw::PositionLeds<> UBX_pos_leds;

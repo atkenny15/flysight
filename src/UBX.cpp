@@ -344,6 +344,7 @@ UBX_buffer_t UBX_buffer;
 UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 uint8_t      UBX_num_windows = 0;
 
+int8_t UBX_num_blink_leds = -1;
 int32_t UBX_acro_win = -1;
 flysight::fw::ExitFinder UBX_exit_finder;
 flysight::fw::Navigation<float> UBX_nav;
@@ -418,21 +419,32 @@ UBX_state = st_idle;
 
 extern "C" { extern int disk_is_ready(void); }
 
+static const uint32_t COLOR_RED   = color_rgb(0x10,    0,    0);
+static const uint32_t COLOR_GREEN = color_rgb(   0, 0x10,    0);
+static const uint32_t COLOR_BLUE  = color_rgb(   0,    0, 0x10);
+static const uint32_t COLOR_WHITE = color_rgb(0x10, 0x10, 0x10);
+
 static uint32_t get_main_led_color() {
 	if (Main_activeLED & LEDS_RED) {
-		return color_rgb(0x10, 0x0, 0x0); // red
+		return COLOR_RED;
 	} else if (Main_activeLED & LEDS_GREEN) {
-		// BBRRGG
-		return color_rgb(0x0, 0x10, 0x0); // green
+		return COLOR_GREEN;
 	}
-	return color_rgb(0x10, 0x10, 0x10); // white
+	return COLOR_WHITE;
 }
 
 static void led_strip_on(const int32_t color = -1) {
-	if (color < 0) {
-		UBX_pos_leds.set_value(get_main_led_color(), 4);
+	uint32_t color_rgb = 0;
+	if (color >= 0) {
+		color_rgb = static_cast<uint32_t>(color);
 	} else {
-		UBX_pos_leds.set_value(color, 4);
+		color_rgb = get_main_led_color();
+	}
+
+	if (UBX_num_blink_leds >= 0 && color_rgb == COLOR_GREEN) {
+		UBX_pos_leds.set_num_leds(UBX_num_blink_leds, COLOR_BLUE);
+	} else {
+		UBX_pos_leds.set_value(color_rgb, 4);
 	}
 }
 

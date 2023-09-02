@@ -181,6 +181,7 @@ Lane_Width:          600 ; Width of lane in meters\r\n\
 Lane_Num_LEDs:        15 ; Number of leds for lane indicator\r\n\
 Lane_LED_Offset:       0 ; First LED in display\r\n\
 Time_After_Exit:      -1 ; Lane start time after ext (ms) (negative to disable)\r\n\
+Num_Blink_LEDs:       -1 ; Number of leds to blink before exit detection\r\n\
 Reference_Lat:         0 ; Reference latitude (deg * 1e7)\r\n\
 Reference_Lon:         0 ; Reference longitude (deg * 1e7)\r\n\
 \r\n\
@@ -287,6 +288,7 @@ static const char Config_Exit_Up_Thresh[] PROGMEM = "Exit_Up_Thresh";
 static const char Config_Lane_Width[] PROGMEM = "Lane_Width";
 static const char Config_Lane_Num_LEDs[] PROGMEM = "Lane_Num_LEDs";
 static const char Config_Lane_LED_Offset[] PROGMEM = "Lane_LED_Offset";
+static const char Config_Num_Blink_LEDs[] PROGMEM = "Num_Blink_LEDs";
 static const char Config_Time_After_Exit[] PROGMEM = "Time_After_Exit";
 static const char Config_Reference_Lat[] PROGMEM = "Reference_Lat";
 static const char Config_Reference_Lon[] PROGMEM = "Reference_Lon";
@@ -380,6 +382,7 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Exit_Down_Thresh, UBX_exit_finder.down_thresh_cmps,    val, TRUE);
 		HANDLE_VALUE(Config_Exit_Up_Thresh,   UBX_exit_finder.up_thresh_cmps,      val, TRUE);
 
+		HANDLE_VALUE(Config_Num_Blink_LEDs,   UBX_num_blink_leds,                  val, TRUE);
 		HANDLE_VALUE(Config_Time_After_Exit,  UBX_nav.time_after_exit_ms,          val, TRUE);
 
 		#undef HANDLE_VALUE
